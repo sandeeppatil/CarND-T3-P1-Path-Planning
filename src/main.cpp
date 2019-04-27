@@ -94,7 +94,7 @@ int main() {
           //Start lane
           int lane = 1;
           //Reference target velocity
-          double ref_vel = 49.0; //mph
+          double ref_vel = 0; //mph
 
           vector<double> next_x_vals;
           vector<double> next_y_vals;
@@ -111,6 +111,42 @@ int main() {
           {
             next_x_vals.push_back(previous_path_x[i]);
             next_y_vals.push_back(previous_path_y[i]);
+          }
+
+          if (path_size > 0)
+          {
+            car_s = end_path_s;
+          }
+
+          bool too_close = false;
+
+          for(int i=0; i<sensor_fusion.size(); i++)
+          {
+            float d = sensor_fusion[i][6];
+            if(d < (2+4*lane+2)&&d>(2+4*lane-2))
+            {
+              double vx = sensor_fusion[i][3];
+              double vy = sensor_fusion[i][4];
+              double check_speed = sqrt(vx*vx+vy*vy);
+              double check_car_s = sensor_fusion[i][5];
+
+              check_car_s+=((double)path_size*0.02*check_speed);
+              if((check_car_s > car_s) && ((check_car_s-car_s) < 30))
+              {
+                //ref_vel=29.5;
+                too_close = true;
+              }
+
+            }
+          }
+
+          if(too_close)
+          {
+            ref_vel -= 0.224;
+          }
+          else if(ref_vel < 49.5)
+          {
+            ref_vel += 0.224;
           }
 
           vector<double> ptsx;
@@ -131,6 +167,7 @@ int main() {
             
             ptsy.push_back(prev_car_y);
             ptsy.push_back(car_y);
+            ref_vel = car_speed;
           }
           // If the previous path exists
           else
@@ -157,23 +194,25 @@ int main() {
           vector<double> next_wp2 = getXY(car_s+90, (2+4*lane), map_waypoints_s, map_waypoints_x, map_waypoints_y);
 
           ptsx.push_back(next_wp0[0]);
-          ptsx.push_back(next_wp0[0]);
-          ptsx.push_back(next_wp0[0]);
+          ptsx.push_back(next_wp1[0]);
+          ptsx.push_back(next_wp2[0]);
 
           ptsy.push_back(next_wp0[1]);
-          ptsy.push_back(next_wp0[1]);
-          ptsy.push_back(next_wp0[1]);
+          ptsy.push_back(next_wp1[1]);
+          ptsy.push_back(next_wp2[1]);
 
-          for (int i = 0; i < ptsx.size(); ++i) {
+          if (ptsx.size() > 2 )
+          {
+            for (int i = 0; i < ptsx.size(); ++i) {
 
-            double shift_x = ptsx[i]-ref_x;
-            double shift_y = ptsy[i]-ref_y;
+              double shift_x = ptsx[i]-ref_x;
+              double shift_y = ptsy[i]-ref_y;
 
-            ptsx[i] = (shift_x * cos(0-ref_yaw)-shift_y*sin(0-ref_yaw));
-            ptsy[i] = (shift_x * sin(0-ref_yaw)+shift_y*cos(0-ref_yaw));
+              ptsx[i] = (shift_x * cos(0-ref_yaw)-shift_y*sin(0-ref_yaw));
+              ptsy[i] = (shift_x * sin(0-ref_yaw)+shift_y*cos(0-ref_yaw));
 
+            }
           }
-
           tk::spline s;
 
           s.set_points(ptsx, ptsy);

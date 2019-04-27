@@ -50,9 +50,12 @@ int main() {
     map_waypoints_dx.push_back(d_x);
     map_waypoints_dy.push_back(d_y);
   }
-
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy]
+  //Start lane
+  int lane = 1;
+  //Reference target velocity
+  double ref_vel = 0; //mph
+  h.onMessage([&ref_vel, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
+               &map_waypoints_dx,&map_waypoints_dy,&lane]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -89,30 +92,15 @@ int main() {
           //   of the road.
           auto sensor_fusion = j[1]["sensor_fusion"];
 
-          json msgJson;
+          //Get previous path size
+          int path_size = previous_path_x.size();
 
-          //Start lane
-          int lane = 1;
-          //Reference target velocity
-          double ref_vel = 0; //mph
-
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
 
           /**
            * TODO: define a path made up of (x,y) points that the car will visit
            *   sequentially every .02 seconds
            */
           
-          //Get previous path size
-          int path_size = previous_path_x.size();
-          //Get previous path
-          for(int i = 0; i < path_size; i++)
-          {
-            next_x_vals.push_back(previous_path_x[i]);
-            next_y_vals.push_back(previous_path_y[i]);
-          }
-
           if (path_size > 0)
           {
             car_s = end_path_s;
@@ -167,7 +155,6 @@ int main() {
             
             ptsy.push_back(prev_car_y);
             ptsy.push_back(car_y);
-            ref_vel = car_speed;
           }
           // If the previous path exists
           else
@@ -223,6 +210,16 @@ int main() {
 
           double x_add_on = 0;
 
+          vector<double> next_x_vals;
+          vector<double> next_y_vals;
+
+          for(int i = 0; i < path_size; i++)
+          {
+            next_x_vals.push_back(previous_path_x[i]);
+            next_y_vals.push_back(previous_path_y[i]);
+          }
+
+
           for(int i = 0; i < 50 - path_size; i++) {
             double N = (target_dist/(.02*ref_vel/2.24));
             double x_point = x_add_on+(target_x)/N;
@@ -243,6 +240,8 @@ int main() {
             next_y_vals.push_back(y_point);
           }
           //TODO END
+          json msgJson;
+
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 

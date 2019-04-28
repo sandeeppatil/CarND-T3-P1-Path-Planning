@@ -121,10 +121,23 @@ int main() {
               check_car_s+=((double)path_size*0.02*check_speed);
               if((check_car_s > car_s) && ((check_car_s-car_s) < 30))
               {
-                //ref_vel=29.5;
                 too_close = true;
-              }
+                switch (lane)
+                {
+                  case 0:
+                  lane = 1;
+                  break;
 
+                  case 1:
+                  lane = 2;
+                  //lane = 0;
+                  break;
+
+                  case 2:
+                  lane = 1;
+                  break;
+                }
+              }
             }
           }
 

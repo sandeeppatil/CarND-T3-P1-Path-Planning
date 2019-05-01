@@ -13,6 +13,7 @@
 using nlohmann::json;
 using std::string;
 using std::vector;
+using namespace std;
 
 int main() {
   uWS::Hub h;
@@ -111,31 +112,127 @@ int main() {
           for(int i=0; i<sensor_fusion.size(); i++)
           {
             float d = sensor_fusion[i][6];
-            if(d < (2+4*lane+2)&&d>(2+4*lane-2))
+
+            //if the neighbouring car is in ego lane?
+            if(d < (2+4*lane+2)&&d>(2+4*lane-2)) 
             {
               double vx = sensor_fusion[i][3];
               double vy = sensor_fusion[i][4];
-              double check_speed = sqrt(vx*vx+vy*vy);
               double check_car_s = sensor_fusion[i][5];
 
+              // calculate the velocity of the neighbouring car 
+              double check_speed = sqrt(vx*vx+vy*vy);
+
+              // Predict where the car will be in future
               check_car_s+=((double)path_size*0.02*check_speed);
+
               if((check_car_s > car_s) && ((check_car_s-car_s) < 30))
               {
+                cout << "\n Close car in ego lane# " << lane;
                 too_close = true;
+                bool turnDanger = false;
+                bool leftDanger = false;
+                bool rightDanger = false;
+
                 switch (lane)
                 {
                   case 0:
-                  lane = 1;
+                  case 2:
+                    // check if lane 1 is free for overtaking
+                    for (int p =0; p<sensor_fusion.size(); p++)
+                    {
+                      float nd = sensor_fusion[p][6];
+                      // check if any car in lane 1
+                      if(nd < 8 && nd > 4)
+                      {
+                        double nvx = sensor_fusion[p][3];
+                        double nvy = sensor_fusion[p][4];
+                        double ns = sensor_fusion[p][5];
+
+                        // calculate the velocity of the neighbouring car 
+                        double nv = sqrt(nvx*nvx+nvy*nvy);
+                        ns+=((double)path_size*0.02*nv);
+                        if( 
+                          (ns - car_s) < 30 &&
+                          (ns - car_s) > -30
+                          )
+                          {
+                            turnDanger = true;
+                            cout <<" Traffic in lane# 1";
+                          }
+                      }
+                    }
+
+                    if (!turnDanger)
+                    {
+                      lane = 1;
+                    }
                   break;
 
                   case 1:
-                  lane = 2;
-                  //lane = 0;
+                    // check if lane 0 is free for overtaking
+                    for (int p =0; p<sensor_fusion.size(); p++)
+                    {
+                      float nd = sensor_fusion[p][6];
+                      // check if any car in lane 1
+                      if(nd < 4 && nd > 0)
+                      {
+                        double nvx = sensor_fusion[p][3];
+                        double nvy = sensor_fusion[p][4];
+                        double ns = sensor_fusion[p][5];
+
+                        // calculate the velocity of the neighbouring car 
+                        double nv = sqrt(nvx*nvx+nvy*nvy);
+                        ns+=((double)path_size*0.02*nv);
+                        if( 
+                          (ns - car_s) < 30 &&
+                          (ns - car_s) > -30
+                          )
+                          {
+                            leftDanger = true;
+                          }
+                      }
+                    }
+
+                    if (!leftDanger)
+                    {
+                      lane = 0;
+                      cout <<" Traffic in lane# 0";
+                      break;
+                    }
+
+                    // check if lane 2 is free for overtaking
+                    for (int p =0; p<sensor_fusion.size(); p++)
+                    {
+                      float nd = sensor_fusion[p][6];
+                      // check if any car in lane 1
+                      if(nd < 12 && nd > 8)
+                      {
+                        double nvx = sensor_fusion[p][3];
+                        double nvy = sensor_fusion[p][4];
+                        double ns = sensor_fusion[p][5];
+
+                        // calculate the velocity of the neighbouring car 
+                        double nv = sqrt(nvx*nvx+nvy*nvy);
+                        ns+=((double)path_size*0.02*nv);
+                        if( 
+                          (ns - car_s) < 30 &&
+                          (ns - car_s) > -30
+                          )
+                          {
+                            rightDanger = true;
+                            cout <<" Traffic in lane# 2";
+                          }
+                      }
+                    }
+
+                    if (!rightDanger)
+                    {
+                      lane = 2;
+                      break;
+                    }
                   break;
 
-                  case 2:
-                  lane = 1;
-                  break;
                 }
               }
             }

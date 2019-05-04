@@ -154,7 +154,7 @@ int main() {
                         ns+=((double)path_size*0.02*nv);
                         if( 
                           (ns - car_s) < 30 &&
-                          (ns - car_s) > -30
+                          (ns - car_s) > -20
                           )
                           {
                             turnDanger = true;
@@ -186,7 +186,7 @@ int main() {
                         ns+=((double)path_size*0.02*nv);
                         if( 
                           (ns - car_s) < 30 &&
-                          (ns - car_s) > -30
+                          (ns - car_s) > -20
                           )
                           {
                             leftDanger = true;
@@ -217,7 +217,7 @@ int main() {
                         ns+=((double)path_size*0.02*nv);
                         if( 
                           (ns - car_s) < 30 &&
-                          (ns - car_s) > -30
+                          (ns - car_s) > -20
                           )
                           {
                             rightDanger = true;
